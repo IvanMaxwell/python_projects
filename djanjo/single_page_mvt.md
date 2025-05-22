@@ -1,4 +1,4 @@
-**🔐 Django Single Page Login App**
+# Django Single Page Login App**
 
 - A minimalist Django web application that loads a single login page at the root URL (`/`).
 
@@ -29,8 +29,8 @@ Here is a step by step process:
 **🔹 1. Clone the Repository**
 - bash
 ```
-git clone https://github.com/your-username/django-login-page.git
-cd django-login-page
+git clone https://github.com/deenamanick/python_projects.git
+cd python_projects.git
 ```
 
 **🔹 2. Create and Activate Virtual Environment**
@@ -52,11 +52,7 @@ source venv/bin/activate
 - bash
 ```
 pip install django
-If you have a requirements.txt file:
-```
-- bash
-```
-pip install -r requirements.txt
+
 ```
 
 **🔹 4. Create Django Project and App**
