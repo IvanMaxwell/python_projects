@@ -111,13 +111,15 @@ If you're starting from scratch:
 
 - bash
 ```
-django-admin startproject login_project .
-python manage.py startapp login_app
+django-admin startproject login_project .     #Creates a new Django project named login_project,we can also change the project name
+python manage.py startapp login_app     #Creates a Django app called login_app,also name changeable
 ```
 
-**🔹 3.Configure the Project**
-3.1. Enable the app in login_project/settings.py
-Find the INSTALLED_APPS section and add 'login_app',:
+**🔹 2.Configure the Project**
+
+1. Enable the app in **login_project/settings.py**
+
+- Find the INSTALLED_APPS section and add 'login_app',:
 
 python
 ```
@@ -128,37 +130,45 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'login_app',  # ✅ Add this line
+    'login_app',  # ✅ Add this line,without it Django won’t recognize your app Without it, things like models, admin pages, templates, and signals won’t work properly.
+
+
 ]
 ```
-3.2. Configure templates directory
-In the same settings.py, find the TEMPLATES section and update 'DIRS' like this:
+
+2. Configure templates directory
+- In the same settings.py, find the TEMPLATES section and update 'DIRS' like this:
+- 'DIRS' tells Django:"Look in these directories for templates"
 
 python
-Copy
-Edit
+```
 import os
 
 TEMPLATES = [
     {
         ...
-        'DIRS': [os.path.join(BASE_DIR, 'login_app', 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'login_app', 'templates')],   #Safely builds the full path to your templates folder
         ...
     },
 ]
+```
 
-**🔹 4. Set Up URLs**
+**🔹 3. Set Up URLs**
 
-- login_project/urls.py
+Inside**login_project/urls.py**
 
 - python
 ```
 from django.contrib import admin
-from django.urls import path, include  # ✅ include is important
+from django.urls import path, include  #path:Lets you define URL patterns ,include: Lets you import URL patterns from another file
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('login_app.urls')),  # root URL to login_app
+    path('', include('login_app.urls')),  # 'login_app.urls' is the location of your app-specific URL patterns.
+
+
 ]
 
 ```
