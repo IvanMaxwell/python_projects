@@ -67,7 +67,7 @@ Python is required for Django development.
 
 Follow the steps below to install it on your system.
 
-For macOS
+**For macOS**
 Check if Python is installed:
 
 terminal
@@ -82,7 +82,7 @@ terminal
 brew install python
 ```
 
-For Windows,
+**For Windows,**
 
 Download Python from the official site:
 
@@ -92,7 +92,9 @@ Run the installer:
 
 Make sure to check the box that says "Add Python to PATH"
 
-For Linux
+Note:If the python isn't working check out this website for guide,https://realpython.com/installing-python/
+
+**For Linux**
 
 Use your package manager. Example for Debian/Ubuntu:
 
@@ -118,31 +120,27 @@ If you see version numbers, Python and pip are successfully installed.
 # installation of django
 
  
-1. Make sure Python is already installed in our system for django
- 
+**1. Make sure Python is already installed in our system for django**
+ terminal
+```
 python --version 
- 
-2. Install django by using pip 
- 
+ ```
+
+**3. Install django by using pip**
+
+**Command:**
+terminal
+``` 
 pip install django 
 pip install django == 1.11.9 
- 
-D:\>pip install django 
-Collecting django 
-Downloading  
-https://files.pythonhosted.org/packages/51/1a/6153103322/Django-2.1-py3-none
-any.whl (7.3MB) 100% || 7.3MB 47kB/s 
- 
-Collecting pytz (from django) 
-  Downloading https://files.pythonhosted.org/packages/30/4e/ 
-53b898779a/pytz-2018.5-py2.py3-none-any.whl (510kB) 
-    100% || 512kB 596kB/s 
- 
-Installing collected packages: pytz, django 
-Successfully installed django-2.1 pytz-2018.5 
-You are using pip version 9.0.3, however version 18.0 is ava 
-You should consider upgrading via the 'python -m pip install 
- 
-3. To check django version: 
- 
+``` 
+The temrinal will show you the following in proccces of insatllation,
+
+![image](https://github.com/user-attachments/assets/3edeb66f-d541-4cf8-b973-2646262fd218)
+
+
+**3. To check django version:** 
+ terminal
+ ```
 py -m django --version
+```
