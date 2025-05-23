@@ -117,7 +117,9 @@ python manage.py startapp login_app     #Creates a Django app called login_app,a
 
 **🔹 2.Configure the Project**
 
-1. Enable the app in **login_project/settings.py**
+1. Enable the app in
+  
+ **login_project/settings.py**
 
 - Find the INSTALLED_APPS section and add 'login_app',:
 
@@ -136,8 +138,10 @@ INSTALLED_APPS = [
 ]
 ```
 
-2. Configure templates directory
+2. Configure templates directory,
+   
 - In the same settings.py, find the TEMPLATES section and update 'DIRS' like this:
+
 - 'DIRS' tells Django:"Look in these directories for templates"
 
 python
@@ -155,7 +159,9 @@ TEMPLATES = [
 
 **🔹 3. Set Up URLs**
 
-Inside**login_project/urls.py**
+Inside,
+
+**login_project/urls.py**
 
 - python
 ```
@@ -172,26 +178,34 @@ urlpatterns = [
 ]
 
 ```
-- login_app/urls.py
+- now again in login_app/urls.py ,add the following line
+  python
+  ```
+  path('',views.login_view,name='login'),
+  ```
+  - It should look like the following,
 - python
 ```
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.login_view, name='login'),
+    path('admin/', admin.site.urls),
+    path('', include('login_app.urls'))
+    path('', views.login_view, name='login'),    #Calls your login page rendering function and Allows you to refer to this route by name in templates and redirects
+
 ]
 ```
 
 **🔹 5. Create the View**
-- login_app/views.py
+- In login_app/views.py
 
 - python
 ```
 from django.shortcuts import render
 
-def login_view(request):
-    return render(request, 'login.html')
+def login_view(request):    #defines a function-based view, request is an object that contains all the details of the current HTTP request
+    return render(request, 'login.html')  #Tells Django to render a template named 'login.html' and Sends that HTML back to the user's browser
 ```
 
 **🔹 6. Create the Template**
@@ -295,15 +309,15 @@ Note: if you want to add css to file here is an inline line css file
 **🔹 7. Run Migrations**
 - bash
 ```
-python manage.py makemigrations
-python manage.py migrate
+python manage.py makemigrations         
+python manage.py migrate            #Scans your app's models.py file for any new or changed database models.Creates a migration file (a Python script) that describes how to apply those changes to the database.
 ```
 
 **🔹 8. Run the Server**
 
 - bash
 ```
-python manage.py runserver
+python manage.py runserver           #tells python to start running the server 
 ```
 
 
@@ -322,8 +336,10 @@ You should see your login page!
 - Extend it by integrating Django's built-in User model and authentication views.
 
 
-**Author
-IvanMaxwell
-GitHub**
+# Author
+
+**IvanMaxwell**
+
+**GitHub**
 
 
