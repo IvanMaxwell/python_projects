@@ -610,6 +610,15 @@ bash
 pip install django
 ```
 
+### Check django version
+
+bash
+
+```
+python -m django --version 
+
+```
+
 **Create a Django Project**
 
 bash
