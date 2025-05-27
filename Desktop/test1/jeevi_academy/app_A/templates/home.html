@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Home Page</title>
+</head>
+<body>
+    <h1>Welcome to Jeevi Academy!</h1>
+
+
+{% if user.is_authenticated %}
+
+    <p>Welcome, {{ user.username }}!</p>
+
+    
+    <a href="/logout/">Logout</a>
+{% else %}
+
+    
+<a href="/login/">Login</a>
+
+<br>
+
+<a href="http://127.0.0.1:8000/accounts/signup/teacher/">Sign up as Teacher</a>
+
+<br>
+
+<a href="http://127.0.0.1:8000/accounts/signup/student/">Sign up as Student</a>
+
+{% endif %}
+
+
+
+
+
+</body>
+</html>
