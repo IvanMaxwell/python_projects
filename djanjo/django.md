@@ -867,9 +867,9 @@ Great! Here's your GitHub-friendly, chapter-style breakdown of the Django Messag
 bash
 
 ```
-django-admin startproject messageboard_project
-cd messageboard_project
-python manage.py startapp board
+django-admin startproject messageboard_project           #start project
+cd messageboard_project                                  
+python manage.py startapp board                           #create app
 ```
 
 Add `board` to `INSTALLED_APPS` in `settings.py`.
@@ -880,7 +880,7 @@ python
 # messageboard_project/settings.py
 INSTALLED_APPS = [
     ...
-    'board',
+    'board',                                #Register app
 ]
 ```
 
@@ -894,16 +894,17 @@ python
 # board/models.py
 from django.db import models
 
-class Message(models.Model):
+class Message(models.Model):                               # Here is where we declare name,content,time
     name = models.CharField(max_length=50)                              # Name of the user
     content = models.TextField()                                         # The actual message
     timestamp = models.DateTimeField(auto_now_add=True)                # Auto-added time
 
     def __str__(self):
         return f"{self.name}: {self.content[:20]}"                     # First 20 chars as preview
+
 ```
 
-Run migrations:
+### Run migrations:
 
 bash
 
@@ -921,7 +922,8 @@ Create a superuser:
 bash
 
 ```
-python manage.py createsuperuser
+python manage.py createsuperuser           
+
 ```
 
 Register the model:
@@ -933,14 +935,14 @@ python
 from django.contrib import admin
 from .models import Message
 
-admin.site.register(Message)
+admin.site.register(Message)             #register the message
 ```
 
 ---
 
 ### 4. Create Views
 
-python
+python 
 
 ```
 # board/views.py
@@ -949,16 +951,16 @@ from .models import Message
 from django.utils import timezone
 
 def home(request):
-    messages = Message.objects.order_by('-timestamp')                  # Show latest first
+z    messages = Message.objects.order_by('-timestamp')                  # Show latest first
     return render(request, 'board/home.html', {'messages': messages})
 
 def post_message(request):
-    if request.method == 'POST':
-        name = request.POST['name']
-        content = request.POST['content']
-        Message.objects.create(name=name, content=content, timestamp=timezone.now())
-        return redirect('home')
-    return render(request, 'board/post_message.html')
+    if request.method == 'POST':                            #gets values from user
+        name = request.POST['name']                         #gets the name of user and assign them
+        content = request.POST['content']                   #gets the content from user and assign them
+        Message.objects.create(name=name, content=content, timestamp=timezone.now())   #auto assign time of user's post
+        return redirect('home')                             #return user to home page
+    return render(request, 'board/post_message.html')        #add the user post
 ```
 
 ---
@@ -975,8 +977,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('', views.home, name='home'),
-    path('post/', views.post_message, name='post_message'),
+    path('', views.home, name='home'),                             #url of home page in app
+    path('post/', views.post_message, name='post_message'),        #url of post page in app         
 ]
 ```
 
@@ -991,7 +993,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('board.urls')),
+    path('', include('board.urls')),                      #url of app
 ]
 ```
 
@@ -1055,7 +1057,9 @@ python manage.py runserver
 
 Create `.gitignore`:
 
-```gitignore
+gitignore
+
+```
 __pycache__/
 *.pyc
 db.sqlite3
