@@ -1066,6 +1066,7 @@ db.sqlite3
 .env
 ```
 
+
 ---
 
 ##  GitHub Steps
@@ -1082,3 +1083,10 @@ git push -u origin main
 
 ---
 
+# structure of code
+
+![image](https://github.com/user-attachments/assets/2d052126-5118-4654-a317-c8db91ff083e)
+
+
+
+---
