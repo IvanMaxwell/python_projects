@@ -1349,7 +1349,10 @@ Visit: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
 
 
 
-# Chapter 6: Forms in django
+# Chapter 5: Forms in django
+
+## Adding customize add page in blog app for users
+
 
 ---
 
@@ -1588,11 +1591,351 @@ Then go to:
 
 ---
 
+# Chapter 6: Newspaper App
 
 
-#  Chapter 6: User Authentication
+Great! You're now looking to build a **basic content management system (CMS)-style Newsreader app** in Django, where:
 
-We'll integrate:
+* Journalists can create, edit, and delete articles.
+* Only the **author** of an article can edit or delete it (permission logic).
+* Any authenticated user can **comment** on an article (introducing **foreign keys**).
+* We'll also include authentication with Django's built-in user model.
+
+---
+
+
+## ✅ 1. Project Setup
+
+### Terminal Commands
+
+```bash
+# Create project and app
+django-admin startproject newsreader .
+python manage.py startapp news
+```
+
+### Install dependencies
+
+```bash
+pip install django
+pip freeze > requirements.txt
+```
+
+---
+
+## ✅ 2. Configure the Project
+
+### In `newsreader/settings.py`
+
+* Add `'news'` to `INSTALLED_APPS`.
+
+```python
+INSTALLED_APPS = [
+    ...,
+    'news',
+]
+```
+
+* Add templates directory (optional):
+
+```python
+import os
+TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR, 'templates')]
+```
+
+---
+
+## ✅ 3. Create Models (Articles & Comments)
+
+### `news/models.py`
+
+```python
+from django.db import models
+from django.contrib.auth.models import User
+from django.urls import reverse
+
+class Article(models.Model):
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('article_detail', args=[str(self.id)])
+
+class Comment(models.Model):
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
+    body = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment by {self.author} on {self.article}"
+```
+
+---
+
+## ✅ 4. Make and Apply Migrations
+
+```bash
+python manage.py makemigrations
+python manage.py migrate
+```
+
+---
+
+## ✅ 5. Create Admin Access
+
+### In `news/admin.py`
+
+```python
+from django.contrib import admin
+from .models import Article, Comment
+
+admin.site.register(Article)
+admin.site.register(Comment)
+```
+
+---
+
+## ✅ 6. Create Forms
+
+### `news/forms.py`
+
+```python
+from django import forms
+from .models import Article, Comment
+
+class ArticleForm(forms.ModelForm):
+    class Meta:
+        model = Article
+        fields = ['title', 'body']
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['body']
+```
+
+---
+
+## ✅ 7. Create Views
+
+### `news/views.py`
+
+```python
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from .models import Article
+from .forms import ArticleForm, CommentForm
+
+def article_list(request):
+    articles = Article.objects.all().order_by('-created_at')
+    return render(request, 'news/article_list.html', {'articles': articles})
+
+def article_detail(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    comments = article.comments.all()
+    
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            new_comment = form.save(commit=False)
+            new_comment.article = article
+            new_comment.author = request.user
+            new_comment.save()
+            return redirect('article_detail', pk=pk)
+    else:
+        form = CommentForm()
+
+    return render(request, 'news/article_detail.html', {
+        'article': article,
+        'comments': comments,
+        'form': form
+    })
+
+@login_required
+def article_create(request):
+    if request.method == 'POST':
+        form = ArticleForm(request.POST)
+        if form.is_valid():
+            new_article = form.save(commit=False)
+            new_article.author = request.user
+            new_article.save()
+            return redirect('article_detail', pk=new_article.pk)
+    else:
+        form = ArticleForm()
+    return render(request, 'news/article_form.html', {'form': form})
+
+@login_required
+def article_edit(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    if article.author != request.user:
+        return HttpResponseForbidden("You are not allowed to edit this article.")
+    
+    if request.method == 'POST':
+        form = ArticleForm(request.POST, instance=article)
+        if form.is_valid():
+            form.save()
+            return redirect('article_detail', pk=pk)
+    else:
+        form = ArticleForm(instance=article)
+    return render(request, 'news/article_form.html', {'form': form})
+
+@login_required
+def article_delete(request, pk):
+    article = get_object_or_404(Article, pk=pk)
+    if article.author != request.user:
+        return HttpResponseForbidden("You are not allowed to delete this article.")
+    
+    if request.method == 'POST':
+        article.delete()
+        return redirect('article_list')
+    
+    return render(request, 'news/article_confirm_delete.html', {'article': article})
+```
+
+---
+
+## ✅ 8. Set Up URLs
+
+### `news/urls.py`
+
+```python
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.article_list, name='article_list'),
+    path('article/<int:pk>/', views.article_detail, name='article_detail'),
+    path('article/new/', views.article_create, name='article_create'),
+    path('article/<int:pk>/edit/', views.article_edit, name='article_edit'),
+    path('article/<int:pk>/delete/', views.article_delete, name='article_delete'),
+]
+```
+
+### `newsreader/urls.py`
+
+```python
+from django.contrib import admin
+from django.urls import path, include
+from django.contrib.auth import views as auth_views
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('accounts/login/', auth_views.LoginView.as_view(), name='login'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('', include('news.urls')),
+]
+```
+
+---
+
+## ✅ 9. Templates
+
+Create template files:
+
+### `templates/news/article_list.html`
+
+```html
+<h1>Articles</h1>
+{% for article in articles %}
+    <h2><a href="{% url 'article_detail' article.pk %}">{{ article.title }}</a></h2>
+    <p>by {{ article.author }} | {{ article.created_at }}</p>
+{% endfor %}
+<a href="{% url 'article_create' %}">Write a New Article</a>
+```
+
+### `templates/news/article_detail.html`
+
+```html
+<h1>{{ article.title }}</h1>
+<p>{{ article.body }}</p>
+<p>by {{ article.author }}</p>
+
+{% if request.user == article.author %}
+    <a href="{% url 'article_edit' article.pk %}">Edit</a>
+    <form method="post" action="{% url 'article_delete' article.pk %}">
+        {% csrf_token %}
+        <button type="submit">Delete</button>
+    </form>
+{% endif %}
+
+<h2>Comments</h2>
+{% for comment in comments %}
+    <p><strong>{{ comment.author }}</strong>: {{ comment.body }}</p>
+{% endfor %}
+
+{% if request.user.is_authenticated %}
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Add Comment</button>
+</form>
+{% else %}
+<p><a href="{% url 'login' %}">Login</a> to comment.</p>
+{% endif %}
+```
+
+### `templates/news/article_form.html`
+
+```html
+<h1>New / Edit Article</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+</form>
+```
+
+### `templates/news/article_confirm_delete.html`
+
+```html
+<h1>Are you sure you want to delete "{{ article.title }}"?</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Yes, delete</button>
+</form>
+<a href="{% url 'article_detail' article.pk %}">Cancel</a>
+```
+
+---
+
+## ✅ 10. Create Superuser & Run Server
+
+```bash
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Visit: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+---
+
+## ✅ Next Steps
+
+* [ ] Add tags or categories
+* [ ] Use class-based views
+* [ ] Add pagination
+* [ ] Use Markdown for formatting
+
+Would you like this bundled into a downloadable zip, or want to host it on GitHub later?
+
+
+
+
+
+
+
+---
+
+#  Chapter 7: User Authentication and password management
+
+- To learn about basic authentication system  we'll integrate the following into our blog app:
 
 * **User Login**
 * **User Logout**
@@ -1934,4 +2277,314 @@ try and test the webpage you have created
 
 ![image](https://github.com/user-attachments/assets/03f6cad0-50f4-46c2-86cf-519a6aff12be)
 
+ ---
 
+
+## To learn about more clear flow of authentication and password management we will intergerate the following features into our pre existing Newspaper app in chapter 6.All using custom templates/pages, not the default Django ones,
+
+* **User signup**
+* **Login**
+* **Logout**
+* **Password change**
+* **Password reset**
+
+
+---
+
+##  Step 1: Project Setup
+
+### 1.1 Ensure your app is ready
+
+If you haven’t created the app:
+
+bash
+
+```
+python manage.py startapp accounts
+```
+
+### 1.2 Add `accounts` to `INSTALLED_APPS` in `settings.py`:
+
+python
+
+```
+INSTALLED_APPS = [
+    ...
+    'accounts',
+    'django.contrib.auth',
+    'django.contrib.messages',
+    ...
+]
+```
+
+### 1.3 Configure `TEMPLATES` and `STATICFILES_DIRS` if needed:
+
+Ensure your `TEMPLATES` setting looks like this:
+
+python
+
+```
+TEMPLATES = [
+    {
+        ...
+        'DIRS': [BASE_DIR / 'templates'],  # global templates dir
+        ...
+    },
+]
+```
+
+---
+
+## ✅ Step 2: Create URLs
+
+### 2.1 In `accounts/urls.py`:
+
+python
+
+```
+from django.urls import path
+from . import views
+from django.contrib.auth import views as auth_views
+
+urlpatterns = [
+    path('signup/', views.signup_view, name='signup'),
+    path('login/', auth_views.LoginView.as_view(template_name='accounts/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(template_name='accounts/logout.html'), name='logout'),
+    path('password_change/', auth_views.PasswordChangeView.as_view(template_name='accounts/password_change.html'), name='password_change'),
+    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/password_change_done.html'), name='password_change_done'),
+    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='accounts/password_reset.html'), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='accounts/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='accounts/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='accounts/password_reset_complete.html'), name='password_reset_complete'),
+]
+```
+
+### 2.2 Include `accounts.urls` in your project’s `urls.py`:
+
+python
+
+```
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('accounts/', include('accounts.urls')),
+]
+```
+
+---
+
+## ✅ Step 3: Create Signup View
+
+### 3.1 In `accounts/views.py`:
+
+python
+
+```
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
+
+def signup_view(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'accounts/signup.html', {'form': form})
+```
+
+---
+
+## ✅ Step 4: Create Templates
+
+Create the following files in: `templates/accounts/`
+(e.g., `myproject/templates/accounts/login.html`, etc.)
+
+### 4.1 Base layout (`templates/base.html`)
+
+html
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NewsReader Auth</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'signup' %}">Sign Up</a> |
+        <a href="{% url 'login' %}">Login</a> |
+        <a href="{% url 'logout' %}">Logout</a> |
+        <a href="{% url 'password_change' %}">Change Password</a> |
+        <a href="{% url 'password_reset' %}">Reset Password</a>
+    </nav>
+    <hr>
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+</body>
+</html>
+```
+
+### 4.2 Signup (`signup.html`)
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>Sign Up</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Sign Up</button>
+</form>
+{% endblock %}
+```
+
+### 4.3 Login (`login.html`)
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>Login</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Login</button>
+</form>
+{% endblock %}
+```
+
+### 4.4 Logout (`logout.html`)
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>You have been logged out.</h2>
+<a href="{% url 'login' %}">Log in again</a>
+{% endblock %}
+```
+
+### 4.5 Password Change & Done
+
+**password\_change.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>Change Password</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Change</button>
+</form>
+{% endblock %}
+```
+
+**password\_change\_done.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<p>Password changed successfully.</p>
+{% endblock %}
+```
+
+### 4.6 Password Reset
+
+**password\_reset.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>Reset Your Password</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Send Reset Email</button>
+</form>
+{% endblock %}
+```
+
+**password\_reset\_done.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<p>Check your email for the reset link.</p>
+{% endblock %}
+```
+
+**password\_reset\_confirm.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<h2>Enter new password</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Change password</button>
+</form>
+{% endblock %}
+```
+
+**password\_reset\_complete.html**
+
+html
+
+```
+{% extends "base.html" %}
+{% block content %}
+<p>Your password has been reset. <a href="{% url 'login' %}">Login</a></p>
+{% endblock %}
+```
+
+---
+
+## ✅ Step 5: Email Settings for Reset
+
+Add to `settings.py` (use console backend for dev):
+
+python
+
+```
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+```
+
+---
+
+## ✅ Step 6: Migrate & Run
+
+bash
+
+```
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Visit `http://127.0.0.1:8000/accounts/signup/` to start testing.
+
+---
